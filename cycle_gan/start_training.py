@@ -27,7 +27,9 @@ def start_training(train_setup,
                    lr=0.0002,
                    lambda_A=10.0,
                    lambda_B=10.0,
-                   lambda_id=0.5):
+                   lambda_id=0.5,
+                   dataset_mode='unaligned'
+                   ):
 
     if crop_size is None:
         crop_size = in_size
@@ -38,7 +40,7 @@ def start_training(train_setup,
                    " --crop_size {} --checkpoints_dir {} --display_id 0"+\
                    " --preprocess {} --batch_size {} --netD {}"+\
                    " --n_layers_D {} --lr {} --lambda_A {} --lambda_B {}"+\
-                   " --lambda_identity {}"
+                   " --lambda_identity {} --dataset_mode {}"
 
         if continue_train:
             base_cmd += " --continue_train"
@@ -65,7 +67,9 @@ def start_training(train_setup,
                               lr,
                               lambda_A,
                               lambda_B,
-                              lambda_id)
+                              lambda_id,
+                              dataset_mode
+                              )
         subprocess.Popen(cmd, 
                          shell=True) 
 
