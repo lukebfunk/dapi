@@ -123,11 +123,23 @@ def train_synapses(train_setup, data_root, submit_cmd):
                    in_size=128,
                    submit_cmd=submit_cmd)
 
+def train_cellpatches(train_setup, data_root, submit_cmd):
+    start_training(train_setup=train_setup,
+                   data_roots=[data_root],
+                   in_size=128,
+                   submit_cmd=submit_cmd,
+                   input_nc=4,
+                   output_nc=4,
+                   dataset_mode='cellpatches'
+                   )
+
 if __name__ == "__main__":
     exp_to_f = {"mnist": train_mnist,
                 "synapses": train_synapses,
                 "disc_a": train_disc_a,
-                "disc_b": train_disc_b}
+                "disc_b": train_disc_b,
+                "gemelli": train_cellpatches
+                }
 
     args = parser.parse_args()
     f_train = exp_to_f[args.experiment]
