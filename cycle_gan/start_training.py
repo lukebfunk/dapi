@@ -134,7 +134,9 @@ def train_cellpatches(train_setup, data_root, submit_cmd):
                    submit_cmd=submit_cmd,
                    input_nc=4,
                    output_nc=4,
-                   dataset_mode='cellpatches'
+                   dataset_mode='cellpatches',
+                   display_scale_min=0,
+                   display_scale_max=0.25
                    )
 
 if __name__ == "__main__":
