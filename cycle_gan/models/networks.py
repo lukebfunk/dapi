@@ -56,7 +56,7 @@ def get_scheduler(optimizer, opt):
             return lr_l
         scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
     elif opt.lr_policy == 'step':
-        scheduler = lr_scheduler.StepLR(optimizer, step_size=opt.lr_decay_iters, gamma=0.1)
+        scheduler = lr_scheduler.StepLR(optimizer, step_size=opt.lr_decay_iters, gamma=opt.lr_step_gamma)
     elif opt.lr_policy == 'plateau':
         scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, threshold=0.01, patience=5)
     elif opt.lr_policy == 'cosine':
@@ -390,6 +390,13 @@ def define_AUX(checkpoint_path, input_size=128, aux_net="vgg2d", output_classes=
                     output_classes=output_classes)
     elif aux_net == "res":
         net = ResNet(output_classes, (input_size, input_size), input_nc)
+    elif aux_net == "gemelli":
+        import funlib.learn.torch
+        net = funlib.learn.torch.models.Vgg2D(input_fmaps=input_nc,
+                input_size=(input_size,input_size),
+                output_classes=output_classes,
+                fmaps=16
+                )
     else:
         raise NotImplementedError
 
@@ -401,8 +408,14 @@ def define_AUX(checkpoint_path, input_size=128, aux_net="vgg2d", output_classes=
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     net.to(device)
+
+    print(f'loading aux model from {checkpoint_path}')
     checkpoint = torch.load(checkpoint_path)
-    net.load_state_dict(checkpoint)
+    try:
+        net.load_state_dict(checkpoint)
+    except:
+        state_dict = {k.lstrip('model.'):vals for k,vals in checkpoint['state_dict'].items()}
+        net.load_state_dict(state_dict) # for pytorch_lightning checkpoints
     return net
 
 class ResnetBlock(nn.Module):

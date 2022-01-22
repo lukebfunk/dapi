@@ -33,8 +33,8 @@ class CellPatchesDataset(BaseDataset):
         Returns:
             the modified parser.
         """
-        parser.add_argument('--samples_csv', type=str,default='~/gemelli/dataset_info/1_train_samples.csv')
-        parser.add_argument('--gene',type=str,default='DTL')
+        # parser.add_argument('--samples_csv', type=str,default='~/gemelli/dataset_info/1_train_samples.csv')
+        parser.add_argument('--gene',type=str,required=True)
         return parser
 
     def __init__(self, opt):
@@ -53,7 +53,7 @@ class CellPatchesDataset(BaseDataset):
         # get the image paths of your dataset;
         
         restrict_query=f'gene_symbol==["nontargeting","{opt.gene}"]'
-        metadata = pd.read_csv(opt.samples_csv).query(restrict_query)
+        metadata = pd.concat([pd.read_csv(f'~/gemelli/dataset_info/1_{d}_samples.csv').query(restrict_query) for d in ['train','test','val']])
 
         assert metadata['gene_symbol'].nunique()==2
         assert (metadata['gene_symbol']=='nontargeting').sum()>0
@@ -65,7 +65,7 @@ class CellPatchesDataset(BaseDataset):
         self.A_arrays = metadata_A['array'].tolist()
         self.B_arrays = metadata_B['array'].tolist()
         self.A_array_indices = metadata_A['array_index'].values.astype(np.int64)
-        self.B_array_indices = metadata['array_index'].values.astype(np.int64)
+        self.B_array_indices = metadata_B['array_index'].values.astype(np.int64)
         self.A_size = len(self.A_paths)  # get the size of dataset A
         self.B_size = len(self.B_paths)  # get the size of dataset B
         btoA = self.opt.direction == 'BtoA'
