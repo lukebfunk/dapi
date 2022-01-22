@@ -1,4 +1,5 @@
 import collections
+from selectors import EpollSelector
 import numpy as np
 import os
 import torch
@@ -10,8 +11,8 @@ from dapi_networks import run_inference, init_network
 
 def get_sgc(real_img, fake_img, real_class, fake_class,
             net_module, checkpoint_path, input_shape,
-            input_nc, layer_name=None, output_classes=6,
-            downsample_factors=None):
+            input_nc, fmaps, layer_name=None, output_classes=6,
+            downsample_factors=None, normalize=True):
     """
         real_img: Unnormalized (0-255) 2D image
 
@@ -33,14 +34,15 @@ def get_sgc(real_img, fake_img, real_class, fake_class,
 
         downsample_factors: Network downsample factors
     """
-
-
-    imgs = [normalize_image(real_img), normalize_image(fake_img)]
+    if normalize:
+        imgs = [normalize_image(real_img), normalize_image(fake_img)]
+    else:
+        imgs = [real_img,fake_img]
     classes = [real_class, fake_class]
 
     if layer_name is None:
         net = init_network(checkpoint_path, input_shape, net_module,
-                           input_nc, eval_net=True, require_grad=False,
+                           input_nc, fmaps=fmaps, eval_net=True, require_grad=False,
                            output_classes=output_classes,
                            downsample_factors=downsample_factors)
         last_conv_layer = [(name,module) for name, module in net.named_modules() if type(module) == torch.nn.Conv2d][-1]
@@ -50,7 +52,7 @@ def get_sgc(real_img, fake_img, real_class, fake_class,
     grads = []
     for x,y in zip(imgs,classes):
         grad_net = init_network(checkpoint_path, input_shape, net_module,
-                                input_nc, eval_net=True, require_grad=False,
+                                input_nc, fmaps=fmaps, eval_net=True, require_grad=False,
                                 output_classes=output_classes,
                                 downsample_factors=downsample_factors)
         grads.append(get_gradients_from_layer(grad_net, x, y, layer_name))
@@ -61,7 +63,7 @@ def get_sgc(real_img, fake_img, real_class, fake_class,
     acts_fake = collections.defaultdict(list)
 
     activation_net = init_network(checkpoint_path, input_shape, net_module,
-                                  input_nc, eval_net=True, require_grad=False, output_classes=output_classes,
+                                  input_nc, fmaps=fmaps, eval_net=True, require_grad=False, output_classes=output_classes,
                                   downsample_factors=downsample_factors)
 
     acts_real, out_real = get_activation_dict(activation_net, [imgs[0]], acts_real)

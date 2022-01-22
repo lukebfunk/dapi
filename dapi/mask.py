@@ -6,13 +6,13 @@ from dapi.utils import normalize_image, save_image
 from dapi_networks import run_inference, init_network
 
 def get_mask(attribution, real_img, fake_img, real_class, fake_class,
-             net_module, checkpoint_path, input_shape, input_nc, output_classes,
+             net_module, checkpoint_path, input_shape, input_nc, fmaps, output_classes,
              downsample_factors=None, sigma=11, struc=10, channel_wise=False):
     """
     attribution: 2D array <= 1 indicating pixel importance
     """
 
-    net = init_network(checkpoint_path, input_shape, net_module, input_nc, eval_net=True, require_grad=False, output_classes=output_classes,
+    net = init_network(checkpoint_path, input_shape, net_module, input_nc, fmaps, eval_net=True, require_grad=False, output_classes=output_classes,
                        downsample_factors=downsample_factors)
     result_dict = {}
     img_names = ["attr", "real", "fake", "hybrid", "mask_real", "mask_fake", "mask_residual", "mask_weight"]

@@ -24,6 +24,7 @@ def get_attribution(real_img,
                     checkpoint_path,
                     input_shape,
                     channels,
+                    fmaps,
                     methods=["ig", "grads", "gc", "ggc", "dl", "ingrad", "random", "residual"],
                     output_classes=6,
                     downsample_factors=None,
@@ -88,7 +89,7 @@ def get_attribution(real_img,
             image_to_tensor(normalize_image(fake_img).astype(np.float32))]
 
     classes = [real_class, fake_class]
-    net = init_network(checkpoint_path, input_shape, net_module, channels, output_classes=output_classes,eval_net=True, require_grad=False,
+    net = init_network(checkpoint_path, input_shape, net_module, channels, fmaps, output_classes=output_classes,eval_net=True, require_grad=False,
                        downsample_factors=downsample_factors)
 
     attrs = []
@@ -125,7 +126,7 @@ def get_attribution(real_img,
 
         gc_diff_0, gc_diff_1 = get_sgc(real_img, fake_img, real_class,
                                      fake_class, net_module, checkpoint_path,
-                                     input_shape, channels, None, output_classes=output_classes,
+                                     input_shape, channels, fmaps=fmaps, layer_name=None, output_classes=output_classes,
                                      downsample_factors=downsample_factors)
         attrs.append(gc_diff_0)
         attrs_names.append("d_gc")
@@ -154,7 +155,7 @@ def get_attribution(real_img,
 
         gc_diff_0, gc_diff_1 = get_sgc(real_img, fake_img, real_class,
                                      fake_class, net_module, checkpoint_path,
-                                     input_shape, channels, None, output_classes=output_classes,
+                                     input_shape, channels, fmaps, None, output_classes=output_classes,
                                      downsample_factors=downsample_factors)
 
         # D-gc
