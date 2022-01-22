@@ -31,6 +31,10 @@ class TestOptions(BaseOptions):
         parser.add_argument('--aux_output_classes', type=int, default=6, help='AUX number of output classes')
         parser.add_argument('--aux_downsample_factors', type=downsample_type, default=[(2,2), (2,2), (2,2), (2,2)], 
                             help='AUX Downsample factors for VGG')
+        parser.add_argument('--output_zarr',type=str,help='when using test_to_zarr.py, specifies zarr where fake images are stored')
+        parser.add_argument("--gene",type=str,required=False) # only used for gemelli experiment
+
+        parser.set_defaults(dataset_mode='single')
 
         # rewrite devalue values
         parser.set_defaults(model='test')
