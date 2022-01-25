@@ -28,9 +28,12 @@ def get_attribution(real_img,
                     methods=["ig", "grads", "gc", "ggc", "dl", "ingrad", "random", "residual"],
                     output_classes=6,
                     downsample_factors=None,
-                    bidirectional=False):
+                    bidirectional=False,
+                    normalize=True
+                    ) -> tuple[list[np.ndarray],list[str]]:
 
-    '''Return (discriminative) attributions for an image pair.
+    '''Return (discriminative) attributions for an image pair (normalized between -1 and 1) 
+    and the attribution names. 
 
     Args:
 
@@ -85,8 +88,12 @@ def get_attribution(real_img,
             Return both attribution directions.
     '''
 
-    imgs = [image_to_tensor(normalize_image(real_img).astype(np.float32)),
-            image_to_tensor(normalize_image(fake_img).astype(np.float32))]
+    if normalize:
+        imgs = [image_to_tensor(normalize_image(real_img).astype(np.float32)),
+                image_to_tensor(normalize_image(fake_img).astype(np.float32))]
+    else:
+        imgs = [image_to_tensor(real_img).astype(np.float32),
+                image_to_tensor(fake_img).astype(np.float32)]
 
     classes = [real_class, fake_class]
     net = init_network(checkpoint_path, input_shape, net_module, channels, fmaps, output_classes=output_classes,eval_net=True, require_grad=False,

@@ -102,15 +102,18 @@ def run_worker(worker,
                                                     input_shape, channels, fmaps,
                                                     output_classes=output_classes,
                                                     bidirectional=bidirectional,
-                                                    downsample_factors=downsample_factors)
+                                                    downsample_factors=downsample_factors,
+                                                    normalize=False)
         else:
             attrs, attrs_names = get_attribution(real_img, fake_img, real_class,
                                                     fake_class, net_module, checkpoint,
                                                     input_shape, channels, fmaps, methods,
                                                     output_classes=output_classes,
                                                     bidirectional=bidirectional,
-                                                    downsample_factors=downsample_factors)
-
+                                                    downsample_factors=downsample_factors,
+                                                    normalize=False)
+        # attrs -> list[np.ndarray] (attribution maps)
+        # attrs_names -> list[str] (attribution method names)
 
         for attr, name in zip(attrs, attrs_names):
             if abs_attr:
@@ -120,7 +123,8 @@ def run_worker(worker,
                                                         real_class, fake_class,
                                                         net_module, checkpoint, input_shape,
                                                         channels, fmaps, output_classes=output_classes,
-                                                        downsample_factors=downsample_factors)
+                                                        downsample_factors=downsample_factors,
+                                                        normalize=False)
 
 
 
