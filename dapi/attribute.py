@@ -92,8 +92,8 @@ def get_attribution(real_img,
         imgs = [image_to_tensor(normalize_image(real_img).astype(np.float32)),
                 image_to_tensor(normalize_image(fake_img).astype(np.float32))]
     else:
-        imgs = [image_to_tensor(real_img).astype(np.float32),
-                image_to_tensor(fake_img).astype(np.float32)]
+        imgs = [image_to_tensor(real_img.astype(np.float32)),
+                image_to_tensor(fake_img.astype(np.float32))]
 
     classes = [real_class, fake_class]
     net = init_network(checkpoint_path, input_shape, net_module, channels, fmaps, output_classes=output_classes,eval_net=True, require_grad=False,

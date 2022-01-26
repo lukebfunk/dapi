@@ -100,7 +100,7 @@ def get_mask(attribution,
             im_copied_norm = normalize_image(copy.deepcopy(copyto))
         else:
             im_copied_norm = copy.deepcopy(copyto)
-        out_copyto = run_inference(net, im_copied_norm)
+        out_copyto = run_inference(net, im_copied_norm.astype(np.float32))
 
         imgs = [attribution, real_img_norm, fake_img_norm, im_copied_norm]
         
