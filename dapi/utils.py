@@ -76,25 +76,29 @@ def save_zarr_image(array, store_path, array_name=None, index=None, renorm=True,
 
     if array_name is not None:
         z = zarr.open(store_path)
-        if array_name in z.array_keys(): # existing array in zarr store
-            z[array_name].append(array)
-        else: # create new array in zarr store
-            z[array_name] = array
+        if '/' in array_name:
+            array_path,array_name = array_name.rsplit('/',1)
+        else:
+            array_path=None
+        if array_name in z[array_path].array_keys(): # existing array in zarr store
+            z[array_path][array_name].append(array)
             if metadata is not None:
-                z[array_name].attrs['metadata'] = []
-        if metadata is not None:
-            z[array_name].attrs['metadata'] += [metadata]
+                z[array_path][array_name].attrs['metadata'] += [metadata]
+        else: # create new array in zarr store
+            z[array_path][array_name] = array
+            if metadata is not None:
+                z[array_path][array_name].attrs['metadata'] = [metadata]
     else:
         try: # append to existing root array
             z = zarr.open_array(store_path)
             z.append(array)
+            if metadata is not None:
+                z.attrs['metadata'] += [metadata]
         except TypeError: # create new root array
             z = zarr.open_array(store_path,'w',shape=array.shape)
             z = array
             if metadata is not None:
-                z['metadata'] = []
-        if metadata is not None:
-            z.attrs['metadata'] += [metadata]
+                z['metadata'] = [metadata]
 
 def get_all_pairs(classes):
     pairs = []

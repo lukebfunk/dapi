@@ -84,84 +84,90 @@ def run_worker(worker,
             break
         # real = reals[i]
         # fake = fakes[i]
-        # with HiddenPrints():
+        with HiddenPrints():
             # img_idx = i
-            # img_dir = os.path.join(out_dir, f"{i}")
+            img_dir = os.path.join(out_dir, f"{i}")
 
             # real_img = real[0]
             # fake_img = fake[0]
             # real_class = real[1]
             # fake_class = fake[1]
 
-        real_img = open_zarr_image(zarr_real, i, input_shape=input_shape)#, array_name=zarr_real_array)
-        fake_img = open_zarr_image(zarr_fake, i, input_shape=input_shape)#, array_name=zarr_fake_array)
+            real_img = open_zarr_image(zarr_real, i, input_shape=input_shape)#, array_name=zarr_real_array)
+            fake_img = open_zarr_image(zarr_fake, i, input_shape=input_shape)#, array_name=zarr_fake_array)
 
-        if methods is None:
-            attrs, attrs_names = get_attribution(real_img, fake_img, real_class,
-                                                    fake_class, net_module, checkpoint,
-                                                    input_shape, channels, fmaps,
-                                                    output_classes=output_classes,
-                                                    bidirectional=bidirectional,
-                                                    downsample_factors=downsample_factors,
-                                                    normalize=False)
-        else:
-            attrs, attrs_names = get_attribution(real_img, fake_img, real_class,
-                                                    fake_class, net_module, checkpoint,
-                                                    input_shape, channels, fmaps, methods,
-                                                    output_classes=output_classes,
-                                                    bidirectional=bidirectional,
-                                                    downsample_factors=downsample_factors,
-                                                    normalize=False)
-        # attrs -> list[np.ndarray] (attribution maps)
-        # attrs_names -> list[str] (attribution method names)
-
-        for attr, name in zip(attrs, attrs_names):
-            if abs_attr:
-                attr = np.abs(attr)
-
-            result_dict, img_names, imgs_all = get_mask(attr, real_img, fake_img,
-                                                        real_class, fake_class,
-                                                        net_module, checkpoint, input_shape,
-                                                        channels, fmaps, output_classes=output_classes,
+            if methods is None:
+                attrs, attrs_names = get_attribution(real_img, fake_img, real_class,
+                                                        fake_class, net_module, checkpoint,
+                                                        input_shape, channels, fmaps,
+                                                        output_classes=output_classes,
+                                                        bidirectional=bidirectional,
                                                         downsample_factors=downsample_factors,
                                                         normalize=False)
+            else:
+                attrs, attrs_names = get_attribution(real_img, fake_img, real_class,
+                                                        fake_class, net_module, checkpoint,
+                                                        input_shape, channels, fmaps, methods,
+                                                        output_classes=output_classes,
+                                                        bidirectional=bidirectional,
+                                                        downsample_factors=downsample_factors,
+                                                        normalize=False)
+            # attrs: list[np.ndarray] (attribution maps)
+            # attrs_names: list[str] (attribution method names)
 
+            for attr, name in zip(attrs, attrs_names):
+                if abs_attr:
+                    attr = np.abs(attr)
 
+                result_dict, img_names, imgs_all = get_mask(attr, real_img, fake_img,
+                                                            real_class, fake_class,
+                                                            net_module, checkpoint, input_shape,
+                                                            channels, fmaps, output_classes=output_classes,
+                                                            downsample_factors=downsample_factors,
+                                                            normalize=False)
 
+                # result_dict: dict[float,list[float]] (mapping threshold -> [difference in prediction, mask size])
+                # img_names: list[str] # image result type names ("attr","real","fake",etc.)
+                # imgs_all: list[list[np.ndarray]] (for each threshold, list of images results corresponding to img_names)
 
-            method_dir = os.path.join(out_dir, name)
-            if not os.path.exists(method_dir):
-                os.makedirs(method_dir)
+                method_dir = os.path.join(img_dir, name)
+                # previously: save result_dict only into separate file for each image
+                if not os.path.exists(method_dir):
+                    os.makedirs(method_dir)
 
-                with open(os.path.join(method_dir, f"{real_class_name}_to_{fake_class_name}_results.txt"), 'a') as f:
-                    print(result_dict, file=f)
+                    with open(os.path.join(method_dir, "results.txt"), 'w+') as f:
+                        print(result_dict, file=f)
 
-            if write_opt:
-                thr_idx, thr, mask_size, mask_score = get_optimal_mask(result_dict, input_shape[0])
-                imgs_opt = imgs_all[thr_idx]
-                
-                for img_opt, img_name in zip(imgs_opt, img_names):
-                    # out_path = os.path.join(imgs_dir, f"{img_name}.png")
-                    print(f'img_name: {img_name}, img shape: {img_opt.shape}, img max: {img_opt.max()}')
-                    save_zarr_image(img_opt, zarr_out, array_name=f'{name}/{img_name}', renorm=True)
+                if write_opt:
+                    thr_idx, thr, mask_size, mask_score = get_optimal_mask(result_dict, input_shape[0])
+                    imgs_opt = imgs_all[thr_idx] # list of np.ndarray
+                    
+                    for img_opt, img_name in zip(imgs_opt, img_names):
+                        # out_path = os.path.join(imgs_dir, f"{img_name}.png")
+                        save_zarr_image(img_opt[None], zarr_out, array_name=f'{name}/{img_name}', renorm=True)
 
-                z_out = zarr.open(zarr_out)
-                z_out.attrs['metadata'] = {"real_class": real_class,
-                                "fake_class": fake_class,
-                                "thr": thr,
-                                "mask_size": mask_size,
-                                "mask_score": mask_score,
-                                "thr_idx": int(thr_idx),
-                                "image_idx":i
-                                }
+                    opt = {"real_class": real_class,
+                            "fake_class": fake_class,
+                            "thr": thr,
+                            "mask_size": mask_size,
+                            "mask_score": mask_score,
+                            "thr_idx": int(thr_idx),
+                            "image_idx":i
+                        }
 
-                # with open(f'{imgs_dir}/img_info.json', "w+") as f:
-                #     json.dump({"real_class": real_class,
-                #                "fake_class": fake_class,
-                #                "thr": thr,
-                #                "mask_size": mask_size,
-                #                "mask_score": mask_score,
-                #                "thr_idx": int(thr_idx)}, f)
+                    z_out = zarr.open(zarr_out)
+                    if 'metadata' in z_out[name].attrs.keys():
+                        z_out[name].attrs['metadata'] += [opt]
+                    else:
+                        z_out[name].attrs['metadata'] = [opt]
+
+                    # with open(f'{imgs_dir}/img_info.json', "w+") as f:
+                    #     json.dump({"real_class": real_class,
+                    #                "fake_class": fake_class,
+                    #                "thr": thr,
+                    #                "mask_size": mask_size,
+                    #                "mask_score": mask_score,
+                    #                "thr_idx": int(thr_idx)}, f)
 
 class HiddenPrints:
     def __enter__(self):
@@ -183,7 +189,7 @@ def parse_args(args):
     arg_dict["downsample_factors"] = down
     return arg_dict
 
-def get_optimal_mask(result_dict, size):
+def get_optimal_mask(result_dict, size) -> tuple[int,float,float,float]:
     def ascore(m_s, m_n):
         return m_n**2 + (1 - m_s)**2
 
